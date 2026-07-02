@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>面_面 日文導覽</title>
+<style>
+  * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Noto Sans TC", "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: #fafaf8; color: #1a1a1a;
+    display: flex; flex-direction: column; min-height: 100%;
+  }
+  header {
+    padding: 24px 24px 16px; border-bottom: 1px solid #e8e4dc; background: #fafaf8;
+  }
+  .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .brand { font-size: 12px; letter-spacing: 0.12em; color: #8a8378; }
+  .top-right { display: flex; align-items: center; gap: 12px; }
+  .counter { font-size: 12px; color: #3d3aa8; font-weight: 700; }
+  .manage-btn {
+    font-size: 12px; padding: 5px 12px; border-radius: 16px;
+    border: 1px solid #cfcac2; background: #fff; color: #6b6560; cursor: pointer;
+  }
+  .dots { display: flex; gap: 5px; flex-wrap: wrap; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; border: none; padding: 0; cursor: pointer; background: #d8d3ca; }
+  .dot.active { background: #3d3aa8; }
+  main { flex: 1; padding: 28px 24px 40px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .page { max-width: 720px; margin: 0 auto; }
+  .label { font-size: 12px; font-weight: 700; color: #3d3aa8; margin-bottom: 4px; }
+  .title { font-size: 18px; font-weight: 700; line-height: 1.5; margin-bottom: 20px; }
+  input.title-input {
+    font-size: 18px; font-weight: 700; line-height: 1.5; margin-bottom: 20px; width: 100%;
+    border: none; border-bottom: 1px solid #d8d3ca; background: transparent; padding: 2px 0;
+    font-family: inherit; color: #1a1a1a;
+  }
+  .status { font-size: 12px; margin-bottom: 10px; white-space: pre-wrap; word-break: break-word; }
+  .status.err { color: #b3413c; }
+  .status.info { color: #8a8378; }
+  .ja-edit {
+    width: 100%; box-sizing: border-box; font-family: inherit; font-size: 18px; line-height: 2;
+    margin-bottom: 8px; padding: 8px 10px; border: 1px solid transparent; border-radius: 6px;
+    resize: none; overflow: hidden; background: transparent; color: #1a1a1a;
+  }
+  .ja-hint { font-size: 11px; color: #b0a89c; margin-bottom: 20px; }
+  .toggle-zh {
+    font-size: 13px; color: #6b6560; background: none; border: 1px solid #cfcac2;
+    border-radius: 20px; padding: 6px 16px; cursor: pointer;
+  }
+  .zh-wrap { margin-top: 14px; }
+  .zh-label { font-size: 12px; color: #8a8378; margin-bottom: 6px; }
+  textarea.zh-input {
+    width: 100%; box-sizing: border-box; font-family: inherit; font-size: 16px; line-height: 1.8;
+    padding: 12px; border: 1px solid #cfcac2; border-radius: 6px; resize: vertical; background: #fff; color: #1a1a1a;
+  }
+  footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 24px; border-top: 1px solid #e8e4dc; background: #fafaf8;
+  }
+  .nav { font-size: 15px; padding: 10px 20px; border-radius: 8px; border: 1px solid #cfcac2; background: #fff; color: #1a1a1a; cursor: pointer; }
+  .nav:disabled { background: #f0ece4; color: #c5c0b8; cursor: default; }
+  .hint { font-size: 12px; color: #a8a29a; }
+  .manage-item { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eee7dd; }
+  .manage-info { flex: 1; min-width: 0; }
+  .manage-sub { font-size: 11px; color: #8a8378; }
+  .manage-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arrow { font-size: 14px; width: 40px; height: 40px; border-radius: 8px; border: 1px solid #cfcac2; background: #fff; color: #1a1a1a; cursor: pointer; }
+  .arrow:disabled { background: #f0ece4; color: #c5c0b8; cursor: default; }
+  .del { font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0c4c2; background: #fff; color: #b3413c; cursor: pointer; }
+  .add-page { width: 100%; margin-top: 20px; font-size: 15px; padding: 14px; border-radius: 10px; border: 1.5px dashed #b0a89c; background: #fff; color: #3d3aa8; cursor: pointer; }
+  .reset { width: 100%; margin-top: 12px; font-size: 13px; padding: 10px; border-radius: 8px; border: 1px solid #cfcac2; background: none; color: #8a8378; cursor: pointer; }
+  .done-btn { font-size: 14px; padding: 8px 16px; border-radius: 8px; border: none; background: #3d3aa8; color: #fff; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const STORAGE_KEY = "mianmian-guide-web-v1";
+const TRANSLATE_ENDPOINT = "/.netlify/functions/translate";
+
+const INITIAL_ITEMS = [
+  { id:"intro", label:"開場", title:"展場全体紹介", fixed:true,
+    zh:"大家好，歡迎蒞臨實踐大學媒體傳達設計學系2026年畢業展《面_面》(Between Faces)。「面」這個字，一方面是平面的「面」，另一方面也是人與人相對而視的「臉」。這場展覽匯集了影像、遊戲、文字設計、出版、裝置等各種形式的作品，每件作品各自發出獨特的聲音，卻又在同一個「面」上相遇、對話。歡迎您以自己的步調漫步展場，和學生們用各自視角編織出的故事展開對話。",
+    ja:"みなさま、本日は実践大学メディアコミュニケーションデザイン学科の卒業展『面_面(Between Faces)』にお越しいただき、誠にありがとうございます。「面」という一文字には、平面としての「面」、そして人と人が向き合う「顔」という、二つの意味が込められています。この展覧会では、映像、ゲーム、タイポグラフィ、出版、インスタレーションなど、多様な手法で作られた作品たちが、それぞれ異なる声を響かせながら、ひとつの「面」の上で出会い、対話しています。どうぞご自身のペースで会場を歩きながら、学生たちがそれぞれの視点で紡いだ物語との対話をお楽しみください。" },
+  { id:"1", label:"01", title:"曾楷蓁『フォーメーション／ミラー』",
+    zh:"這件作品使用Unreal Engine 5.5與TouchDesigner製作，是一件互動裝置。作品從「自我是由他者所形塑」這個提問出發，透過觀看、無意識、幻影三個階段，帶領觀者經歷延遲、錯位與再建構的體驗。在失去體感、只剩下行動可見的狀態下，人不得不與自己重新面對面。",
+    ja:"こちらの作品は、Unreal Engine 5.5とTouchDesignerを用いたインタラクティブ・インスタレーションです。「自分は他者によって形づくられる」という問いを出発点に、観る・無意識・幻影という三つの段階を通して、鑑賞者に遅延、ずれ、そして再構築という体験をもたらします。体感覚を失い、行動だけが見えるという不安定な状況の中で、私たちは否応なく自分自身と向き合うことになります。" },
+  { id:"2", label:"02", title:"卒業制作映像・学科紹介上映",
+    zh:"這個角落播放的是畢業製作動畫影片與學系介紹影片。「紅豆丸」、「不幹了」、「被偷走的色彩」、「害蟲」等十幾部主題與風格各異的短片依序播放，每位學生都用自己的方式說故事。同時也能看到實踐大學媒體傳達設計學系的宣傳影片。歡迎坐下來，慢慢欣賞。",
+    ja:"こちらのコーナーでは、卒業制作アニメーション映像および学科紹介映像を上映しています。「あずき丸」「もう辞めた」「盗まれた色彩」「害虫」など、テーマも作風も異なる十四本以上の短編作品が並び、それぞれの学生が自分らしい語り口で物語を描いています。あわせて実践大学メディアコミュニケーションデザイン学科によるプロモーション映像もご覧いただけます。ぜひ椅子におかけになって、じっくりとご鑑賞ください。" },
+  { id:"3", label:"03", title:"鄭宇晴／黃星伶／陳妍宇『↑5F?! STUDIO』",
+    zh:"這是一件以Blender、Procreate、Unity製作的作品《5F STUDIO》。虛構的網紅經紀公司「5F STUDIO」推出新人網紅大偉、欣欣與PAPER，並舉辦出道粉絲見面會。作品藉「粉絲見面會」這個形式，重新叩問現代社會的認同渴望與流量文化——也就是我們內心那份「渴望被看見」的欲望。",
+    ja:"こちらはBlender、Procreate、Unityを使って制作された作品「5F STUDIO」です。架空のインフルエンサー事務所「5F STUDIO」から、新人インフルエンサーのダーウェイ、シンシン、PAPERがデビューし、ファンミーティングを開催するという設定になっています。「ファンミーティング」という形式を借りながら、承認欲求と現代の流量文化、つまり「見られたい」という私たちの欲望そのものを問い直す作品です。" },
+  { id:"4", label:"04", title:"「面_面」卒展関連グッズ",
+    zh:"這裡是畢業展《面_面》的原創周邊商品區，包含織品、透鏡海報、面膜、透鏡吊飾等各種素材與裝置。呼應本展「多元視角的交流與相互映照」的理念，學生們透過作品彼此對話，將交錯的思想織在一起，共同構成了一個容納不同立場與價值觀的「面」。",
+    ja:"こちらは卒業展『面_面』のオリジナルグッズコーナーです。織物、レンチキュラーポスター、フェイスマスク、レンチキュラーチャームなど、様々な素材やインスタレーションを通して展開されています。本展が掲げる、多様な視点の交流と相互の映し合いという理念に呼応し、学生たちは作品を通して語り合い、そこで交錯する思想を織り合わせながら、異なる立場や価値観が共存するひとつの「面」を形づくりました。" },
+  { id:"5", label:"05", title:"葉芷涵『どうせ食べるんでしょ』",
+    zh:"這是一款使用Swift與VisionKit OCR技術開發的手機應用程式《食育掃描器》。透過掃描食品包裝上的成分標示，玩家能夠「捕捉」食品添加物，是一款寓教於樂的食育遊戲。複雜的知識與台灣食品添加物的歷史，被重新設計成有趣的圖鑑收集系統，讓人一邊玩一邊學習更健康的飲食方式。",
+    ja:"こちらはSwiftとVisionKitのOCR技術を使ったスマートフォンアプリ「FOOD SCANNER」です。食品パッケージの成分表示をスキャンすることで、食品添加物を「捕まえる」食育ゲームとなっています。複雑な知識や台湾における食品添加物の歴史を、図鑑コレクションという楽しい形に再構成することで、遊びながら健康的な食生活について学べるよう設計されています。" },
+  { id:"6", label:"06", title:"李心妤／張宸『MINTS マガジン』",
+    zh:"這是一份紙本藝術雜誌《MINTS》。刊名取自「鑄造(minting)」與「薄荷(mint)」兩個詞的結合，透過與世界各地藝術家的共同創作，以攝影、文字、裝置等多種形式捕捉日常的片段。將孤立的瞬間編織在一起，重新以嶄新視角凝視生活中細膩的角落，構成一則廣闊的敘事。",
+    ja:"こちらは紙媒体のアート誌『MINTS』です。「鋳造（minting）」と「ミント（mint）」という二つの言葉から名づけられたこの雑誌は、世界各地のアーティストとの共同制作を通じて、写真、文章、インスタレーションなど多様な形式で日常の断片を捉えています。孤立した瞬間の数々を織り合わせることで、日常の細部を新しい視点から見つめ直す、広やかな物語を紡いでいます。" },
+  { id:"7", label:"07", title:"原画・制作資料展示ウォール『SKETCH & PROCESS WALL』",
+    zh:"這面草圖牆上，收錄了學生們的草稿、分鏡、設定圖等創作痕跡，記錄下反覆修改與嘗試的過程。每一件完成的作品背後，都存在著一個看不見的「面」。在這裡，那些看不見的過程碎片並列展示、彼此呼應，呈現出每位創作者走向完成之前，最真實的軌跡。",
+    ja:"このスケッチウォールには、学生たちのラフスケッチや絵コンテ、設定画など、描き直しと試行錯誤を重ねた創作の痕跡が集められています。完成した作品の背後には、表には現れないもうひとつの「面」が必ず存在します。ここでは、その見えない過程の断片たちが並び、互いに響き合いながら、それぞれの作家が完成に至るまでの、最も率直な軌跡を伝えています。" },
+  { id:"8", label:"08", title:"洪研恩『モノたち（DONG.C.MEN）』",
+    zh:"這件作品結合了毛線、數位繪畫，以及AI影像生成技術。主題是日常生活中那些難以命名的細微瞬間。手工毛線的溫度，與數位、AI等新技術並置在一起，為那些說不清、道不明的日常情感，靜靜賦予了形狀。",
+    ja:"こちらは毛糸、デジタルペイント、そしてAIによる映像生成を組み合わせた作品です。日々の暮らしの中にある、名づけがたい小さな出来事たちをテーマにしています。手仕事の温もりを持つ毛糸と、デジタルやAIといった新しい技術が並置されることで、言葉にならない日常の感情に、静かにかたちが与えられています。" },
+  { id:"9", label:"09", title:"呉霽『FRAVE』",
+    zh:"這是一款使用Unity與實體遊戲機台製作的新世代節奏遊戲。玩家在立體空間中揮動身體，隨著音樂節奏斬擊，是一款強調全身參與的體感遊戲。歡迎親自體驗這種超越平面框架、隨著音浪律動的全新節奏遊戲。",
+    ja:"こちらはUnityと実機筐体を用いて制作された、新時代のリズムゲームです。プレイヤーは立体空間の中を振り抜き、音楽のリズムに合わせて斬るという、全身を使った体験型のゲームプレイが特徴です。空間の枠を超え、音の波に乗って動くという、新しい身体感覚のリズムゲームをぜひ体験してみてください。" },
+  { id:"10", label:"10", title:"魏沛筵『冒険チワワ・タン』",
+    zh:"這是一款使用Unity、Visual Studio、Clip Studio Paint製作的動作遊戲。主角是一隻名叫「炭吉」的小吉娃娃，故事描述牠能否打敗壞貓、奪回被搶走的黃金雞腿，拯救王國。可愛的角色與痛快的動作是本作的魅力所在。",
+    ja:"こちらはUnity、Visual Studio、Clip Studio Paintを用いて制作されたアクションゲームです。小さなチワワ「炭吉（タンジ）」が主人公で、悪い猫たちをやっつけながら、王国から奪われた黄金のチキンレッグを取り戻せるかどうかを描く、冒険物語となっています。かわいらしいキャラクターと痛快なアクションが魅力の作品です。" },
+  { id:"11", label:"11", title:"林玉葶『DRINKTING』",
+    zh:"這件作品結合了P5.js、Joy-Con與Adobe Illustrator製作而成。玩家能在幽默奇異的世界觀中，體驗台灣手搖飲文化的樂趣。故事描述人類在異星經營手搖飲攤位，帶著珍珠奶茶的魔法將飲料文化傳播出去，最終踏上返回地球的冒險旅程。",
+    ja:"こちらはP5.js、Joy-Con、Adobe Illustratorを組み合わせて制作されたインタラクティブ作品です。台湾のドリンクスタンド文化の楽しさを、ユーモラスで奇妙な世界観の中で体験できます。プレイヤーは人類として異星でドリンクの屋台を営み、タピオカドリンクの魔法とともにその文化を広めながら、やがて地球へと帰っていく冒険に出発します。" },
+  { id:"12", label:"12", title:"林詠丞『窓辺に咲く（鉄窓花の文字）』",
+    zh:"這是一件使用Adobe Illustrator與Procreate製作的文字設計作品。創作者關注台灣街景中常見卻極具特色的「鐵窗花」造型，將其線條轉化為組構漢字筆畫的造字規則，設計成一套獨特的字體，把城市的記憶封存進文字之中。",
+    ja:"こちらはAdobe IllustratorとProcreateを用いて制作されたタイポグラフィ作品です。台湾の街並みでよく見かける、独特な形状を持つ「鉄窓花（防犯鉄格子）」に着目し、その線の形を漢字の筆画を組み立てるための作字ルールへと変換することで、ひとつの書体としてデザインしています。街の記憶を文字の中に宿らせた作品です。" },
+  { id:"13", label:"13", title:"「面_面」公式ウェブサイト",
+    zh:"這裡介紹的是畢業展《面_面》的官方網站。這個網站作為展覽的數位入口，讓所有作品匯聚在同一個介面之中，同時各自發出獨特的聲音。來自不同視角的作品彼此交錯、相互呼應，歡迎您也以自己的步調，在線上細細品味。",
+    ja:"こちらは卒業展『面_面』の公式ウェブサイトのご紹介です。このサイトは展覧会へのデジタルな入口として機能しており、すべての作品がひとつのインターフェースに集いながらも、それぞれが固有の声を響かせています。多様な視点から生まれた作品同士が交差し、響き合う様子を、ご自身のペースで、ぜひオンラインでもお楽しみください。" },
+  { id:"14", label:"14", title:"実践大学メディアコミュニケーションデザイン学科　学科公式ウェブサイト",
+    zh:"最後為大家介紹的是實踐大學媒體傳達設計學系的官方網站。這個網站是認識本學系的起點，橫跨影像、互動、設計等領域，介紹我們如何思考與表現。歷屆學生透過作品與世界對話的軌跡，也都完整記錄在這裡。",
+    ja:"最後にご紹介するのは、実践大学メディアコミュニケーションデザイン学科の公式ウェブサイトです。このサイトは学科を知るための出発点として、映像、インタラクション、デザインの領域を横断しながら、私たちがいかに考え、表現しているのかを紹介しています。歴代の学生たちが作品を通して世界と対話してきた歩みも、あわせてご覧いただけます。" }
+];
+
+let items = loadItems();
+let index = 0;
+let showZh = false;
+let mode = "view";
+let status = "idle";
+let errMsg = "";
+let translateTimer = null;
+let touchStartX = null, touchStartY = null;
+
+function loadItems() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(INITIAL_ITEMS));
+}
+function saveItems() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) {}
+}
+
+async function translateToJapanese(zhText) {
+  let resp;
+  try {
+    resp = await fetch(TRANSLATE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: zhText }),
+    });
+  } catch (netErr) {
+    throw new Error("網路連線失敗：" + (netErr && netErr.message ? netErr.message : "無法連上翻譯服務"));
+  }
+  let data;
+  try { data = await resp.json(); }
+  catch (e) { throw new Error("回應解析失敗（非 JSON，狀態碼 " + resp.status + "）"); }
+  if (!resp.ok) throw new Error(data && data.error ? data.error : ("錯誤 " + resp.status));
+  if (!data.ja) throw new Error("翻譯回應為空");
+  return data.ja;
+}
+
+async function runTranslate(id, zhText) {
+  if (!zhText.trim()) return;
+  status = "translating"; errMsg = ""; render();
+  const maxAttempts = 3;
+  let lastErr = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const ja = await translateToJapanese(zhText);
+      const it = items.find((x) => x.id === id);
+      if (it) it.ja = ja;
+      saveItems();
+      status = "idle"; render();
+      return;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, attempt * 800));
+    }
+  }
+  errMsg = (lastErr && lastErr.message ? lastErr.message : String(lastErr)) + "（已自動重試 " + maxAttempts + " 次）";
+  status = "error"; render();
+}
+
+function scheduleTranslate(id, value) {
+  const it = items.find((x) => x.id === id);
+  if (it) it.zh = value;
+  saveItems();
+  status = "pending"; render();
+  if (translateTimer) clearTimeout(translateTimer);
+  translateTimer = setTimeout(() => runTranslate(id, value), 1000);
+}
+
+function goTo(next) {
+  if (next < 0 || next >= items.length) return;
+  index = next; showZh = false; status = "idle"; render();
+}
+
+function addPage() {
+  items.push({ id: "custom-" + Date.now(), label: "＋", title: "新頁面", zh: "",
+    ja: "（在下方輸入中文後，日文將自動翻譯出現在這裡）", custom: true });
+  saveItems();
+  mode = "view"; index = items.length - 1; showZh = true; render();
+}
+function moveItem(from, dir) {
+  const to = from + dir;
+  if (to < 1 || to >= items.length) return;
+  if (items[from].fixed) return;
+  const next = items.slice();
+  const m = next.splice(from, 1)[0];
+  next.splice(to, 0, m);
+  items = next; saveItems(); render();
+}
+function deleteItem(id) {
+  items = items.filter((it) => it.id !== id);
+  saveItems(); render();
+}
+function resetAll() {
+  if (confirm("確定要還原成初始 15 頁嗎？您新增的頁面與修改將會遺失。")) {
+    items = JSON.parse(JSON.stringify(INITIAL_ITEMS));
+    index = 0; mode = "view"; saveItems(); render();
+  }
+}
+
+function el(tag, props, children) {
+  const e = document.createElement(tag);
+  if (props) Object.keys(props).forEach((k) => {
+    if (k === "class") e.className = props[k];
+    else if (k === "style") e.style.cssText = props[k];
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(), props[k]);
+    else if (k === "disabled") { if (props[k]) e.disabled = true; }
+    else e.setAttribute(k, props[k]);
+  });
+  (children || []).forEach((c) => { if (c != null) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+  return e;
+}
+
+function autoGrow(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+
+function renderManage() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  const header = el("header", { style: "display:flex;justify-content:space-between;align-items:center;" }, [
+    el("span", { style: "font-size:16px;font-weight:700;" }, ["管理頁面順序"]),
+    el("button", { class: "done-btn", onClick: () => { mode = "view"; render(); } }, ["完成"]),
+  ]);
+  const list = el("main", {}, []);
+  items.forEach((it, i) => {
+    const info = el("div", { class: "manage-info" }, [
+      el("div", { class: "manage-sub" }, [it.fixed ? "固定・開場" : "第 " + (i + 1) + " 頁"]),
+      el("div", { class: "manage-title" }, [it.title || "（未命名）"]),
+    ]);
+    const row = el("div", { class: "manage-item" }, [info]);
+    if (!it.fixed) {
+      row.appendChild(el("button", { class: "arrow", disabled: i <= 1, onClick: () => moveItem(i, -1) }, ["▲"]));
+      row.appendChild(el("button", { class: "arrow", disabled: i >= items.length - 1, onClick: () => moveItem(i, 1) }, ["▼"]));
+      row.appendChild(el("button", { class: "del", onClick: () => { if (confirm("確定刪除「" + (it.title || "此頁") + "」？")) deleteItem(it.id); } }, ["刪除"]));
+    }
+    list.appendChild(row);
+  });
+  list.appendChild(el("button", { class: "add-page", onClick: addPage }, ["＋ 新增一頁空白頁面"]));
+  list.appendChild(el("button", { class: "reset", onClick: resetAll }, ["還原成初始 15 頁"]));
+  app.appendChild(header);
+  app.appendChild(list);
+}
+
+function renderView() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  const total = items.length;
+  if (index >= total) index = total - 1;
+  const current = items[index];
+
+  const dots = el("div", { class: "dots" }, items.map((it, i) =>
+    el("button", { class: "dot" + (i === index ? " active" : ""), onClick: () => goTo(i) }, [])));
+  const header = el("header", {}, [
+    el("div", { class: "top-row" }, [
+      el("span", { class: "brand" }, ["面_面　日文導覽　v3"]),
+      el("div", { class: "top-right" }, [
+        el("span", { class: "counter" }, [(index + 1) + " / " + total]),
+        el("button", { class: "manage-btn", onClick: () => { mode = "manage"; render(); } }, ["管理／新增"]),
+      ]),
+    ]),
+    dots,
+  ]);
+
+  const page = el("div", { class: "page" }, []);
+  page.appendChild(el("div", { class: "label" }, [current.label]));
+  if (current.custom) {
+    page.appendChild(el("input", {
+      class: "title-input", value: current.title, placeholder: "輸入此頁標題（作品名）",
+      onInput: (e) => { current.title = e.target.value; saveItems(); },
+    }, []));
+  } else {
+    page.appendChild(el("div", { class: "title" }, [current.title]));
+  }
+
+  if (status !== "idle") {
+    let txt = status === "translating" ? "翻訳中…"
+      : status === "pending" ? "変更を検出…"
+      : status === "error" ? "翻訳エラー：" + errMsg : "";
+    if (txt) page.appendChild(el("div", { class: "status " + (status === "error" ? "err" : "info") }, [txt]));
+  }
+
+  const jaTa = el("textarea", {
+    class: "ja-edit", rows: "3",
+    onInput: (e) => { current.ja = e.target.value; saveItems(); autoGrow(e.target); },
+  }, []);
+  jaTa.value = current.ja;
+  page.appendChild(jaTa);
+  page.appendChild(el("div", { class: "ja-hint" }, ["↑ 日文可直接點擊編輯（翻譯失敗時可手動貼上）"]));
+
+  const toggle = el("button", { class: "toggle-zh", onClick: () => { showZh = !showZh; render(); } },
+    [showZh ? "收起中文 ▲" : (current.custom ? "輸入中文 ▼" : "顯示中文對照 ▼")]);
+  page.appendChild(toggle);
+
+  if (showZh) {
+    const ta = el("textarea", {
+      class: "zh-input", rows: "7",
+      placeholder: current.custom ? "在這裡輸入中文講稿，上方會自動翻成日文…" : "",
+      onInput: (e) => scheduleTranslate(current.id, e.target.value),
+      onFocus: (e) => { const t = e.target; setTimeout(() => t.scrollIntoView({ behavior: "smooth", block: "center" }), 300); },
+    }, []);
+    ta.value = current.zh;
+    page.appendChild(el("div", { class: "zh-wrap" }, [
+      el("div", { class: "zh-label" }, ["中文（編輯後日文將自動更新）"]),
+      ta,
+    ]));
+  }
+
+  const main = el("main", {
+    onTouchstart: (e) => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; },
+    onTouchend: (e) => {
+      if (touchStartX == null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) goTo(index + 1); else goTo(index - 1);
+      }
+      touchStartX = null; touchStartY = null;
+    },
+  }, [page]);
+
+  const footer = el("footer", {}, [
+    el("button", { class: "nav", disabled: index === 0, onClick: () => goTo(index - 1) }, ["← 上一件"]),
+    el("span", { class: "hint" }, ["左右滑動翻頁"]),
+    el("button", { class: "nav", disabled: index === total - 1, onClick: () => goTo(index + 1) }, ["下一件 →"]),
+  ]);
+
+  app.appendChild(header);
+  app.appendChild(main);
+  app.appendChild(footer);
+  autoGrow(jaTa);
+}
+
+function render() {
+  if (mode === "manage") renderManage();
+  else renderView();
+}
+
+render();
+</script>
+</body>
+</html>
