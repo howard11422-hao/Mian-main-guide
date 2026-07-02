@@ -6,12 +6,14 @@
 <title>面_面 日文導覽</title>
 <style>
   * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
   body {
     font-family: "Noto Sans TC", "Hiragino Sans", "Yu Gothic", sans-serif;
     background: #fafaf8; color: #1a1a1a;
-    display: flex; flex-direction: column; min-height: 100%;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; flex-direction: column;
   }
+  #app { display: flex; flex-direction: column; height: 100%; overflow: hidden; width: 100%; }
   header {
     padding: 24px 24px 16px; border-bottom: 1px solid #e8e4dc; background: #fafaf8;
   }
@@ -26,7 +28,7 @@
   .dots { display: flex; gap: 5px; flex-wrap: wrap; }
   .dot { width: 9px; height: 9px; border-radius: 50%; border: none; padding: 0; cursor: pointer; background: #d8d3ca; }
   .dot.active { background: #3d3aa8; }
-  main { flex: 1; padding: 28px 24px 40px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  main { flex: 1; min-height: 0; padding: 28px 24px 40px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .page { max-width: 720px; margin: 0 auto; }
   .label { font-size: 12px; font-weight: 700; color: #3d3aa8; margin-bottom: 4px; }
   .title { font-size: 18px; font-weight: 700; line-height: 1.5; margin-bottom: 20px; }
@@ -328,7 +330,6 @@ function renderView() {
       class: "zh-input", rows: "7",
       placeholder: current.custom ? "在這裡輸入中文講稿，上方會自動翻成日文…" : "",
       onInput: (e) => scheduleTranslate(current.id, e.target.value),
-      onFocus: (e) => { const t = e.target; setTimeout(() => t.scrollIntoView({ behavior: "smooth", block: "center" }), 300); },
     }, []);
     ta.value = current.zh;
     page.appendChild(el("div", { class: "zh-wrap" }, [
