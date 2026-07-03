@@ -203,6 +203,22 @@ function resetAll() {
   }
 }
 
+function exportItems() {
+  const json = JSON.stringify(items, null, 2);
+  const done = () => alert("已複製目前內容到剪貼簿！請貼回對話給 Claude。");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(done).catch(() => fallbackCopy(json, done));
+  } else { fallbackCopy(json, done); }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand("copy"); done(); }
+  catch (e) { alert("複製失敗，請手動長按選取。"); }
+  document.body.removeChild(ta);
+}
+
 function el(tag, props, children) {
   const e = document.createElement(tag);
   if (props) Object.keys(props).forEach((k) => {
@@ -241,6 +257,7 @@ function renderManage() {
   });
   list.appendChild(el("button", { class: "add-page", onClick: addPage }, ["＋ 新增一頁空白頁面"]));
   list.appendChild(el("button", { class: "reset", onClick: resetAll }, ["還原成初始 15 頁"]));
+  list.appendChild(el("button", { class: "reset", style: "border-color:#3d3aa8;color:#3d3aa8;margin-top:8px;", onClick: exportItems }, ["📤 匯出目前內容（複製到剪貼簿）"]));
   app.appendChild(header); app.appendChild(list);
 }
 
