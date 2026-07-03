@@ -63,7 +63,7 @@ const INITIAL_ITEMS = [
   { id:"intro", label:"開場", title:"展場全体紹介", fixed:true,
     zh:"大家好，歡迎蒞臨實踐大學媒體傳達設計學系2026年畢業展《面_面》(Between Faces)。「面」這個字，一方面是平面的「面」，另一方面也是人與人相對而視的「臉」。這場展覽匯集了影像、遊戲、文字設計、出版、裝置等各種形式的作品，每件作品各自發出獨特的聲音，卻又在同一個「面」上相遇、對話。歡迎您以自己的步調漫步展場，和學生們用各自視角編織出的故事展開對話。",
     ja:"みなさま、本日は実践大学メディアコミュニケーションデザイン学科の卒業展『面_面(Between Faces)』にお越しいただき、誠にありがとうございます。「面」という一文字には、平面としての「面」、そして人と人が向き合う「顔」という、二つの意味が込められています。この展覧会では、映像、ゲーム、タイポグラフィ、出版、インスタレーションなど、多様な手法で作られた作品たちが、それぞれ異なる声を響かせながら、ひとつの「面」の上で出会い、対話しています。どうぞご自身のペースで会場を歩きながら、学生たちがそれぞれの視点で紡いだ物語との対話をお楽しみください。" },
-  { id:"1", label:"01", title:"曾楷棻『フォーメーション／ミラー』",
+  { id:"1", label:"01", title:"曾楷蓁『フォーメーション／ミラー』",
     zh:"這件作品使用Unreal Engine 5.5與TouchDesigner製作，是一件互動裝置。作品從「自我是由他者所形塑」這個提問出發，透過觀看、無意識、幻影三個階段，帶領觀者經歷延遲、錯位與再建構的體驗。在失去體感、只剩下行動可見的狀態下，人不得不與自己重新面對面。",
     ja:"こちらの作品は、Unreal Engine 5.5とTouchDesignerを用いたインタラクティブ・インスタレーションです。「自分は他者によって形づくられる」という問いを出発点に、観る・無意識・幻影という三つの段階を通して、鑑賞者に遅延、ずれ、そして再構築という体験をもたらします。体感覚を失い、行動だけが見えるという不安定な状況の中で、私たちは否応なく自分自身と向き合うことになります。" },
   { id:"2", label:"02", title:"卒業制作映像・学科紹介上映",
@@ -146,11 +146,23 @@ async function runTranslate(id, zhText) {
       const ja = await translateToJapanese(zhText);
       const it = items.find((x) => x.id === id);
       if (it) it.ja = ja;
-      saveItems(); status = "idle"; render(); return;
+      saveItems();
+      status = "idle"; updateStatusText();
+      if (items[index] && items[index].id === id) updateJaField(ja);
+      return;
     } catch (e) { lastErr = e; if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, attempt * 800)); }
   }
   errMsg = (lastErr && lastErr.message ? lastErr.message : String(lastErr)) + "（已自動重試 " + maxAttempts + " 次）";
   status = "error"; updateStatusText();
+}
+
+function updateJaField(ja) {
+  const ta = document.querySelector("textarea.ja-edit");
+  if (!ta) return;
+  if (document.activeElement === ta) return;
+  ta.value = ja;
+  ta.style.height = "auto";
+  ta.style.height = ta.scrollHeight + "px";
 }
 
 function updateStatusText() {
